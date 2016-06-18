@@ -5,7 +5,6 @@ import Relay from 'react-relay';
 class Item extends Component {
   render() {
       const item = this.props.store;
-      console.log(this.props);
     return (
       <div className="">
         <h1><a href={item.url}>{item.title}</a></h1>
@@ -16,13 +15,32 @@ class Item extends Component {
 }
 
 class TopItems extends Component {
+
+    _onChange(ev) {
+      const storyType = ev.target.value;
+      this.setState({storyType});
+      this.props.relay.setVariables({
+         storyType
+      });
+    };
+
   render() {
     console.log(this);
-    const items = this.props.store.topStories.map(
+    const items = this.props.store.stories.map(
       (store, idx) => <Item store={store} key={idx} />
-    )
+    );
+    const variables = this.props.relay.variables;
+
+    const currentStoryType = (this.state && this.state.storyType) || variables.storyType;
+
     return (
       <div className="">
+        <select onChange={this._onChange.bind(this)} value={currentStoryType}>
+          <option value="top">Top</option>
+          <option value="new">New</option>
+          <option value="ask">Ask</option>
+          <option value="show">Show</option>
+        </select>
         {items}
       </div>
     );
@@ -30,10 +48,13 @@ class TopItems extends Component {
 }
 
 TopItems = Relay.createContainer(TopItems, {
+  initialVariables: {
+   storyType: "top"
+  },
   fragments: {
     store: () => Relay.QL`
       fragment on HackerNewsAPI {
-        topStories {${Item.getFragment('store')}},
+        stories(storyType: $storyType) {${Item.getFragment('store')}},
       }
     `,
   },
